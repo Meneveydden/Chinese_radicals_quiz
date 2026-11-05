@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Китайские ключи — тренировка</title>
+<style>
+:root{font-family:system-ui,'Microsoft YaHei','Noto Sans CJK SC',sans-serif;color:#e9edf5;background:#101723}*{box-sizing:border-box}body{margin:0;padding:24px 14px}.app{max-width:680px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}h1{font-size:1.6rem;margin:0 0 8px}.muted{color:#a9b7ca;font-size:.92rem}.panel{background:#1a2535;border:1px solid #304058;border-radius:18px;padding:22px;margin-top:18px}.switch{display:flex;gap:8px;flex-wrap:wrap}button,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 16px;background:#34465e;color:#f4f7ff}button.active,button.primary{background:#4f87ef;color:white}button:disabled{opacity:.45;cursor:not-allowed}button:hover:not(:disabled){filter:brightness(1.12)}select{background:#26364b;color:white;padding:10px;border:1px solid #455b79;border-radius:10px}.question{font-weight:600;text-align:center;color:#c5d2e6}.char{font-family:'Microsoft YaHei','Noto Sans CJK SC','SimSun',sans-serif;text-align:center;font-size:clamp(76px,15vw,112px);line-height:1.5;margin:12px 0 18px}.choices{display:grid;gap:10px}.choice{display:flex;gap:12px;align-items:center;border:1px solid #40516a;background:#202f42;border-radius:12px;padding:14px;cursor:pointer}.choice:has(input:checked){border-color:#80b2ff;background:#2a4264}.choice.correct{border-color:#52b98d;background:#204438}.choice.wrong{border-color:#e27b7b;background:#502d36}.choice input{accent-color:#76a9ff;width:18px;height:18px}.actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}.feedback{min-height:26px;margin-top:14px;font-weight:600}.ok{color:#74ddb0}.bad{color:#ff9999}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}.stat{background:#1a2535;border:1px solid #304058;border-radius:12px;padding:13px;text-align:center}.stat strong{display:block;font-size:1.4rem}.stat span{font-size:.82rem;color:#a9b7ca}.foot{margin-top:18px;color:#9baabe;font-size:.86rem}@media(max-width:450px){.stats{gap:5px}.panel{padding:16px}.stat{padding:10px 4px}}
+</style>
+</head>
+<body><main class="app">
+<div class="top"><div><h1>汉字 · Китайские ключи</h1><div class="muted">Запоминаем первые 20 ключей</div></div><select id="lesson" aria-label="Выбор урока"><option value="1">Урок 1 · 10 ключей</option><option value="2">Урок 2 · 20 ключей</option></select></div>
+<section class="panel"><div class="switch"><button type="button" id="training" class="active">Тренировка</button><button type="button" id="practice">Практика</button></div><p id="description" class="muted">Проверяй ответы без начисления очков.</p><div class="question" id="question"></div><div class="char" id="char"></div><form id="choices" class="choices"></form><div class="actions"><button type="button" id="check" class="primary">Проверить</button><button type="button" id="next">Далее</button></div><div id="feedback" class="feedback" role="status" aria-live="polite"></div></section>
+<div class="stats"><div class="stat"><strong id="points">0</strong><span>Очки практики</span></div><div class="stat"><strong id="right">0</strong><span>Правильно</span></div><div class="stat"><strong id="wrong">0</strong><span>Ошибки</span></div></div><div class="foot">В тренировке нажми «Далее» после проверки. В практике следующий вопрос появляется сразу после проверки. Переключение урока и режима не сбрасывает счёт.</div>
+</main>
+<script>
+'use strict';
+const LESSON_1 = ['一','丨','丶','丿','乙;乚','亅','二','亠','人;亻','儿'];
+const LESSON_2 = ['入','八','冂','冖','冫','几','凵','刀;刂','力','勹'];
+const DATA = {
+'一':{pronounce:['yī'],value:['единица']},
+'丨':{pronounce:['gǔn'],value:['вертикальная']},
+'丶':{pronounce:['zhǔ'],value:['точка']},
+'丿':{pronounce:['piě'],value:['откидная влево']},
+'乙;乚':{pronounce:['yǐ'],value:['второй (цикличный знак)']},
+'亅':{pronounce:['jué'],value:['вертикальная с крюком']},
+'二':{pronounce:['èr'],value:['два']},
+'亠':{pronounce:['tóu'],value:['горизонтальная с точкой']},
+'人;亻':{pronounce:['rén'],value:['человек']},
+'儿':{pronounce:['ér'],value:['идущий человек']},
+'入':{pronounce:['rù'],value:['входить']},
+'八':{pronounce:['bā'],value:['восемь; делить']},
+'冂':{pronounce:['jiōng'],value:['границы']},
+'冖':{pronounce:['mì'],value:['крышка']},
+'冫':{pronounce:['bīng'],value:['лёд']},
+'几':{pronounce:['jī'],value:['столик; несколько']},
+'凵':{pronounce:['kǎn'],value:['яма']},
+'刀;刂':{pronounce:['dāo'],value:['нож']},
+'力':{pronounce:['lì'],value:['сила']},
+'勹':{pronounce:['bāo'],value:['обёртывать']}
+};
+const $=id=>document.getElementById(id);
+let mode='training', current=null, currentType=null, correct=null, checked=false, previous=null;
+let points=0,right=0,wrong=0;
+const pool=()=> $('lesson').value==='1' ? LESSON_1 : [...LESSON_1,...LESSON_2];
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newQuestion(){
+ const candidates=pool().filter(x=>x!==previous);
+ current=candidates[Math.floor(Math.random()*candidates.length)];previous=current;
+ currentType=Math.random()<.5?'pronounce':'value';correct=DATA[current][currentType][0];checked=false;
+ $('question').textContent=currentType==='pronounce'?'Как читается ключ?':'Что означает ключ?';
+ $('char').textContent=current.replaceAll(';','  ');
+ const others=[...new Set(pool().filter(x=>x!==current).map(x=>DATA[x][currentType][0]))].filter(x=>x!==correct);
+ const options=shuffle([correct,...shuffle(others).slice(0,3)]);
+ $('choices').replaceChildren();
+ options.forEach((value,i)=>{
+   const label=document.createElement('label');label.className='choice';
+   const radio=document.createElement('input');radio.type='radio';radio.name='answer';radio.value=value;radio.id='option'+i;
+   const text=document.createElement('span');text.textContent=value;
+   label.append(radio,text);$('choices').append(label);
+ });
+ $('feedback').textContent='';$('feedback').className='feedback';$('check').disabled=false;
+ $('next').hidden=mode==='practice';
+}
+function checkAnswer(){
+ if(checked)return;
+ const selected=$('choices').querySelector('input[name="answer"]:checked');
+ if(!selected){$('feedback').textContent='Сначала выбери вариант ответа.';return;}
+ checked=true;const good=selected.value===correct;
+ for(const radio of $('choices').querySelectorAll('input')){
+   radio.disabled=true;
+   if(radio.value===correct)radio.parentElement.classList.add('correct');
+   else if(radio.checked)radio.parentElement.classList.add('wrong');
+ }
+ if(mode==='practice'){
+   points+=good?5:-5;
+   if(good)right++;else wrong++;
+   $('points').textContent=points;$('right').textContent=right;$('wrong').textContent=wrong;
+ }
+ $('feedback').textContent=good?'✓ Верно!'+(mode==='practice'?' +5 очков':''):'✗ Неверно. Правильный ответ: '+correct+(mode==='practice'?' (−5 очков)':'');
+ $('feedback').className='feedback '+(good?'ok':'bad');$('check').disabled=true;
+ if(mode==='practice'){
+   // Кратко показываем результат, затем автоматически переходим дальше.
+   window.setTimeout(()=>{if(mode==='practice'&&checked)newQuestion();},1100);
+ }
+}
+function setMode(nextMode){mode=nextMode;$('training').classList.toggle('active',mode==='training');$('practice').classList.toggle('active',mode==='practice');$('description').textContent=mode==='training'?'Проверяй ответы без начисления очков.':'Правильно: +5, ошибка: −5. После проверки автоматически следующий ключ.';newQuestion();}
+$('check').addEventListener('click',checkAnswer);
+$('next').addEventListener('click',newQuestion);
+$('training').addEventListener('click',()=>setMode('training'));
+$('practice').addEventListener('click',()=>setMode('practice'));
+$('lesson').addEventListener('change',newQuestion);
+$('choices').addEventListener('submit',e=>{e.preventDefault();checkAnswer();});
+newQuestion();
+</script></body></html>
