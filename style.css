@@ -1,0 +1,35 @@
+.mascot {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.mascot-image {
+    width: 130px;
+    height: auto;
+    flex-shrink: 0;
+}
+
+.mascot-bubble {
+    background: #fff8e9;
+    color: #303047;
+    border: 2px solid #e8d8b8;
+    border-radius: 18px;
+    padding: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+    flex: 1;
+    transition: opacity 0.2s ease;
+}
+
+@media (max-width: 600px) {
+    .mascot-image {
+        width: 85px;
+    }
+
+    .mascot-bubble {
+        font-size: 13px;
+        padding: 12px;
+    }
+}
