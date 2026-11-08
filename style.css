@@ -33,3 +33,11 @@
         padding: 12px;
     }
 }
+.app {
+    max-width: 1180px;
+    display: grid;
+    grid-template-columns: 320px minmax(0, 680px);
+    gap: 28px;
+    align-items: start;
+    justify-content: center;
+}
